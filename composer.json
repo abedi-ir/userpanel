@@ -1,0 +1,38 @@
+{
+    "name": "jalno/userpanel",
+    "description": "Userpanel for jalno apps.",
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "^7.3|^8.0",
+        "jalno/lumen": "0.0.1",
+        "jalno/config": "^1.0.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.9.1",
+        "mockery/mockery": "^1.3.1",
+        "phpunit/phpunit": "^9.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jalno\\Userpanel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "convert-to-primary-package": [
+            "@php ./vendor/bin/ConvertToPrimariyPackage"
+        ]
+    }
+}
