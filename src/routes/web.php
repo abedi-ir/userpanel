@@ -1,5 +1,5 @@
 <?php
-use Jalno\Userpanel\Http\Controllers\{UsersController, LoginController, UserTypesController, ConfigController};
+use Jalno\Userpanel\Http\Controllers\{UsersController, LoginController, UserTypesController, ConfigController, LogsController};
 use Jalno\Userpanel\Models\UserType;
 
 /** @var \Laravel\Lumen\Routing\Router $router */
@@ -36,6 +36,10 @@ $router->group(['prefix' => '/userpanel', 'middleware' => 'auth'], function($rou
     $router->get("/config/{config}", array('uses' => ConfigController::class . "@byConfig"));
     $router->put("/config", array('uses' => ConfigController::class . "@update"));
     $router->put("/config/{config}", array('uses' => ConfigController::class . "@updateByConfig"));
+
+    $router->get("/logs", array('uses' => LogsController::class . "@search"));
+    $router->get("/logs/{log}", array('uses' => LogsController::class . "@findByID"));
+    $router->delete("/logs/{log}", array('uses' => LogsController::class . "@delete"));
 });
 
 

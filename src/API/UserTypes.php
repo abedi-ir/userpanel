@@ -1,12 +1,13 @@
 <?php
 namespace Jalno\Userpanel\API;
 
-use Jalno\Userpanel\Exceptions;
 use Illuminate\Validation\Rule;
 use Jalno\Userpanel\Models\UserType;
+use Jalno\Userpanel\Models\{Log, User};
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserTypes extends API
@@ -37,7 +38,7 @@ class UserTypes extends API
         $types = $this->user()->childrenTypes();
 
         if (!$types) {
-            throw new NotFoundException();//TODO
+            throw new AuthorizationException();
         }
 
         $query->whereIn("id", $types);
@@ -59,7 +60,7 @@ class UserTypes extends API
 
         $types = $this->user()->childrenTypes();
         if (!$types) {
-            throw new Exceptions\NotAllowedException();
+            throw new AuthorizationException();
         }
 
         return $this->createOrUpdate($parameters);
@@ -93,6 +94,9 @@ class UserTypes extends API
         }
 
         $paginator = null;
+        $logParameters = [
+            "old" => [],
+        ];
         do {
             $paginator = $this->search($parameters, 100, ['*'], 'cursor', $paginator ? $paginator->nextCursor() : null);
 
@@ -100,10 +104,23 @@ class UserTypes extends API
                 throw (new ModelNotFoundException)->setModel(UserType::class);
             }
     
-            foreach ($paginator as $tiem) {
-                $tiem->delete();
+            foreach ($paginator as $item) {
+                $hasUser = User::where("usertype_id", $item->id)->exists();
+                if ($hasUser) {
+                    throw ValidationException::withMessages(["usertypes.{$item->id}" => "The selected usertype has user."]);
+                }
+                $logParameters["old"][] = $item->toArray();
+                $item->delete();
             }
         } while($paginator->hasMorePages());
+
+        if (!empty($logParameters["old"])) {
+            $log = new Log();
+            $log->user_id = $this->user()->id;
+            $log->type = "jalno.userpanel.usertypes.logs.delete";
+            $log->parameters = $logParameters;
+            $log->save();
+        }
     }
 
     /**
@@ -137,6 +154,11 @@ class UserTypes extends API
             }
         }
 
+        $logParameters = [
+            "old" => [],
+            "new" => [],
+        ];
+
         if (!$usertype) {
             $usertype = UserType::create();
 
@@ -146,6 +168,8 @@ class UserTypes extends API
                 $parentTypes[] = $this->user()->usertype_id;
             }
 
+            $logParameters["new"]["parentTypes"] = $parentTypes;
+
             foreach ($parentTypes as $parent) {
                 \DB::table("userpanel_usertypes_priorities")->insert([
                     "parent_id" => $parent,
@@ -154,24 +178,58 @@ class UserTypes extends API
             }
         }
 
+        if (isset($parameters["priorities"])) {
+            $priorities = $usertype->childrenTypes();
+
+            if ($priorities) {
+                $deletedPriorities = array_diff($priorities, $parameters["priorities"]);
+
+                if ($deletedPriorities) {
+                    $logParameters["old"]["priorities"] = $deletedPriorities;
+                    \DB::table("userpanel_usertypes_priorities")
+                        ->where("parent_id", $usertype->id)
+                        ->whereIn("child_id", $deletedPriorities)
+                        ->delete();
+                }
+
+                $parameters["priorities"] = array_diff($parameters["priorities"], array_diff($priorities, $deletedPriorities));
+                
+            }
+
+            if (!empty($parameters["priorities"])) {
+                $logParameters["new"]["priorities"] = $parameters["priorities"];
+
+                foreach ($parameters["priorities"] as $priority) {
+                    \DB::table("userpanel_usertypes_priorities")->insert([
+                        "parent_id" => $usertype->id,
+                        "child_id" => $priority,
+                    ]);
+                }
+            }
+        }
+
         if (isset($parameters["names"])) {
-            $usertypeNames = (new UserType\Name)->where("usertype_id", $usertype->id)->get();
+            $usertypeNames = $usertype->names;
 
             if ($usertypeNames) {
-                $deletedNames = $usertypeNames->filter(fn($name) => !isset($parameters["names"][$name->lang]) or !in_array($name->name, $parameters["names"]));
-                foreach ($deletedNames as $username) {
-                    $username->delete();
+                $deletedNames = $usertypeNames->filter(fn($name) => !isset($parameters["names"][$name->lang]) or !in_array($name->text, $parameters["names"]));
+                
+                if ($deletedNames) {
+                    $logParameters["old"]["names"] = [];
+                    foreach ($deletedNames as $username) {
+                        $logParameters["old"]["names"][$username->lang] = $username->text;
+                        $username->delete();
+                    }
                 }
 
                 $parameters["names"] = array_diff($parameters["names"], $usertypeNames->diff($deletedNames)->pluck("name")->all());
             }
 
-            foreach ($parameters["names"] as $lang => $name) {
-                $model = new UserType\Name();
-                $model->usertype_id = $usertype->id;
-                $model->lang = $lang;
-                $model->name = $name;
-                $model->saveOrFail();
+            if ($parameters["names"]) {
+                $logParameters["new"]["names"] = $parameters["names"];
+                foreach ($parameters["names"] as $lang => $name) {
+                    $usertype->addTitle($lang, $name);
+                }
             }
         }
 
@@ -180,20 +238,38 @@ class UserTypes extends API
 
             if ($permissions) {
                 $deletedPermissions = $permissions->filter(fn($item) => !in_array($item->name, $parameters["permissions"]));
-                foreach ($deletedPermissions as $permission) {
-                    $permission->delete();
+                
+                if ($deletedPermissions) {
+                    $logParameters["old"]["names"] = [];
+
+                    foreach ($deletedPermissions as $permission) {
+                        $logParameters["old"]["names"][] = $permission->name;
+                        $permission->delete();
+                    }
                 }
 
                 $parameters["permissions"] = array_diff($parameters["permissions"], $permissions->diff($deletedPermissions)->pluck("name")->all());
             }
 
-            foreach ($parameters["permissions"] as $name) {
-                $model = new UserType\Permission();
-                $model->usertype_id = $usertype->id;
-                $model->name = $name;
-                $model->saveOrFail();
+            if ($parameters["permissions"]) {
+                $logParameters["new"]["names"] = [];
+
+                foreach ($parameters["permissions"] as $name) {
+                    $model = new UserType\Permission();
+                    $model->usertype_id = $usertype->id;
+                    $model->name = $name;
+                    $model->saveOrFail();
+
+                    $logParameters["new"]["names"][] = $name;
+                }
             }
         }
+
+        $log = new Log();
+        $log->user_id = $user->id;
+        $log->type = "jalno.userpanel.usertypes.logs." . (empty($logParameters["old"]) ? "add" : "update");
+        $log->parameters = $logParameters;
+        $log->save();
 
         return $usertype;
     }

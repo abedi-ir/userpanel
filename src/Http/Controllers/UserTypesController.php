@@ -46,7 +46,7 @@ class UserTypesController extends Controller
 
         return response(array(
             "status" => true,
-            "user" => $usertype->makeHidden("priorities"),
+            "usertype" => $usertype->makeHidden("priorities"),
             "childrenTypes" => $usertype->childrenTypes(),
             "has_custom_permissions_users" => (new User)->where("usertype_id", $usertype->id)->where("has_custom_permissions", 1)->exists(),
         ));
@@ -60,7 +60,7 @@ class UserTypesController extends Controller
 
         return response(array(
             "status" => true,
-            "user" => $usertype,
+            "usertype" => $usertype,
         ));
     }
 
@@ -72,7 +72,7 @@ class UserTypesController extends Controller
 
         return response(array(
             "status" => true,
-            "user" => $usertype,
+            "usertype" => $usertype,
         ));
     }
 

@@ -1,6 +1,7 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use Jalno\Userpanel\Models\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Container\Container;
@@ -61,9 +62,24 @@ class Config extends API
         ));
 
         $config = $this->app->make("config");
+
+        $logParameters = [
+            "old" => [],
+            "new" => [],
+        ];
+
         foreach ($parameters["config"] as $item) {
             $name = $item["name"];
             $value = $item["value"];
+
+            $oldConfig = $config->get($name);
+            
+            if ($oldConfig == $value) {
+                continue;
+            }
+
+            $logParameters["old"][$name] = $oldConfig;
+            $logParameters["new"][$name] = $value;
 
             $namespace = implode(".", array_slice(explode(".", $name, 3), 0, 2));
 
@@ -76,6 +92,14 @@ class Config extends API
             $model = new ConfigModel();
             $model->fill(['name' => $namespace, 'value' => $config->get($namespace)]);
             $model->save();
+        }
+
+        if (!empty($logParameters["old"]) and !empty($logParameters["new"])) {
+            $log = new Log();
+            $log->user_id = $this->user()->id;
+            $log->type = "jalno.userpanel.configs.logs." . ($config->has($name) ? "update" : "add");
+            $log->parameters = $logParameters;
+            $log->save();
         }
     }
 }

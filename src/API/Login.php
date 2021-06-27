@@ -1,6 +1,7 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use Jalno\Userpanel\Models\Log;
 use Illuminate\Validation\Rule;
 use Jalno\Userpanel\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -37,6 +38,14 @@ class Login extends API
         $username = new User\UserName();
         $username->fill(["user_id" => $user->id, "username" => $parameters["username"]]);
         $username->saveOrFail();
+
+        $log = new Log();
+        $log->user_id = $user->id;
+        $log->type = "jalno.userpanel.users.logs.register";
+        $log->parameters = array(
+            "new" => $parameters,
+        );
+        $log->save();
 
         return $user;
     }

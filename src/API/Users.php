@@ -2,6 +2,7 @@
 namespace Jalno\Userpanel\API;
 
 use Illuminate\Validation\Rule;
+use Jalno\Userpanel\Models\Log;
 use Illuminate\Support\Facades\Validator;
 use Jalno\Userpanel\Models\{User, UserType};
 use Illuminate\Validation\ValidationException;
@@ -103,6 +104,9 @@ class Users extends API
         }
 
         $paginator = null;
+        $logParameters = [
+            "old" => [],
+        ];
         do {
             $paginator = $this->search($parameters, 100, ['*'], 'cursor', $paginator ? $paginator->nextCursor() : null);
 
@@ -110,10 +114,25 @@ class Users extends API
                 throw (new ModelNotFoundException)->setModel(User::class);
             }
     
-            foreach ($paginator as $tiem) {
-                $tiem->delete();
+            foreach ($paginator as $item) {
+                $logParameter = $item->toArray();
+                $logParameter["usernames"] = $item->usernames->pluck("username");
+                if ($item->has_custom_permissions) {
+                    $logParameter["permissions"] = $item->permissions->pluck("name");
+                }
+                $logParameters["old"][] = $logParameter;
+                $item->delete();
             }
+
         } while($paginator->hasMorePages());
+
+        if (!empty($logParameters["old"])) {
+            $log = new Log();
+            $log->user_id = $this->user()->id;
+            $log->type = "jalno.userpanel.users.logs.delete";
+            $log->parameters = $logParameters;
+            $log->save();
+        }
     }
 
     /**
@@ -156,9 +175,22 @@ class Users extends API
             $user = new User();
         }
 
+        $logParameters= [
+            "new" => [],
+            "old" => [],
+        ];
         foreach ($parameters as $key => $value) {
             if (in_array($key, ["username", "permissions"])) {
                 continue;
+            }
+            $isSensitive = in_array($key, ["password"]);
+            if ($user->id) {
+                if ($user->{$key} != $value) {
+                    $logParameters["new"][$key] = $isSensitive ? "***" : $value;
+                    $logParameters["old"][$key] = $isSensitive ? "***" : $user->{$key};
+                }
+            } else {
+                $logParameters["new"][$key] = $isSensitive ? "***" : $value;
             }
             $user->{$key} = $value;
         }
@@ -169,41 +201,85 @@ class Users extends API
 
             if ($usernames) {
                 $deletedUserNames = $usernames->filter(fn($username) => !in_array($username->username, $parameters["username"]));
-                foreach ($deletedUserNames as $username) {
-                    $username->delete();
+                if (!empty($deletedUserNames)) {
+                    $logParameters["old"]["usernames"] = [];
+                    foreach ($deletedUserNames as $username) {
+                        $logParameters["old"]["usernames"][] = $username->username;
+                        $username->delete();
+                    }
                 }
 
                 $parameters["username"] = array_diff($parameters["username"], $usernames->diff($deletedUserNames)->pluck("username")->all());
             }
 
-            foreach ($parameters["username"] as $username) {
-                $model = new User\UserName();
-                $model->user_id = $user->id;
-                $model->username = $username;
-                $model->saveOrFail();
+            if (!empty($parameters["username"])) {
+                $logParameters["new"]["usernames"] = [];
+
+                foreach ($parameters["username"] as $username) {
+                    $model = new User\UserName();
+                    $model->user_id = $user->id;
+                    $model->username = $username;
+                    $model->saveOrFail();
+    
+                    $logParameters["new"]["usernames"][] = $username;
+                }
             }
         }
 
         if ($hasCustomePermission and !$user->has_custom_permissions) {
-            User\Permission::query()->where("user_id", $user->id)->delete();
+            $permisssions = $user->permissions;
+
+            if ($permisssions) {
+                $logParameters["old"]["permissions"] = [];
+                foreach ($permissions as $permission) {
+                    $logParameters["old"]["permissions"][] = $permission->name;
+                    $permission->delete();
+                }
+            }
         } elseif (isset($parameters["permissions"])) {
             $permissions = $user->permissions;
             if ($permissions) {
                 $deletedPermissions = $permissions->filter(fn($item) => !in_array($item->name, $parameters["permissions"]));
-                foreach ($deletedPermissions as $permission) {
-                    $permission->delete();
+                
+                if ($deletedPermissions) {
+                    $logParameters["old"]["permissions"] = [];
+                    foreach ($deletedPermissions as $permission) {
+                        $logParameters["old"]["permissions"][] = $permission->name;
+                        $permission->delete();
+                    }
                 }
 
                 $parameters["permissions"] = array_diff($parameters["permissions"], $permissions->diff($deletedPermissions)->pluck("name")->all());
             }
+            
+            if (!empty($parameters["permissions"])) {
+                $logParameters["new"]["permissions"] = [];
+                foreach ($parameters["permissions"] as $name) {
+                    $model = new User\Permission();
+                    $model->user_id = $user->id;
+                    $model->name = $name;
+                    $model->saveOrFail();
 
-            foreach ($parameters["permissions"] as $name) {
-                $model = new User\Permission();
-                $model->user_id = $user->id;
-                $model->name = $name;
-                $model->saveOrFail();
+                    $logParameters["new"]["permissions"][] = $name;
+                }
             }
         }
+
+        $isEditing = !empty($logParameters["old"]);
+
+        if ($this->user()->id != $user->id) {
+            $log = new Log();
+            $log->user_id = $this->user()->id;
+            $log->type = "jalno.userpanel.users.logs." . ($isEditing ? "edit" : "add");
+            $log->parameters = $logParameters;
+            $log->save();
+        }
+
+        $log = new Log();
+        $log->user_id = $user->id;
+        $log->type = "jalno.userpanel.users.logs." . ($isEditing ? "update" : "register");
+        $log->parameters = $logParameters;
+        $log->save();
 
         return $user;
     }

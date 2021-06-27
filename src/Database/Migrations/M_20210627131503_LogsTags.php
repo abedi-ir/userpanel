@@ -5,7 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class M_20210608111510_UserTypesNames extends Migration
+class M_20210627131503_LogsTags extends Migration
 {
     /**
      * Run the migrations.
@@ -14,17 +14,14 @@ class M_20210608111510_UserTypesNames extends Migration
      */
     public function up()
     {
-        Schema::create('userpanel_usertypes_names', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('usertype_id');
-            $table->foreign('usertype_id')
+        Schema::create('userpanel_logs_tags', function (Blueprint $table) {
+            $table->unsignedBigInteger('log_id');
+            $table->foreign('log_id')
                     ->references('id')
-                    ->on('userpanel_usertypes')
+                    ->on('userpanel_logs')
                     ->onDelete('cascade')
                     ->onUpdate('cascade');
-            $table->string('lang', 2);
-            $table->string('name', 255);
-            $table->timestamps();
+            $table->string("tag");
         });
     }
 
@@ -35,6 +32,6 @@ class M_20210608111510_UserTypesNames extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('userpanel_usertypes_names');
+        Schema::dropIfExists('userpanel_logs_tags');
     }
 }

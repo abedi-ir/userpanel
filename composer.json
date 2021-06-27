@@ -5,8 +5,10 @@
     "type": "project",
     "require": {
         "php": "^7.3|^8.0",
-        "jalno/lumen": "0.0.1",
-        "jalno/config": "^1.0.0"
+        "jalno/lumen": "^1.0.0",
+        "jalno/config": "^1.0.0",
+        "jalno/passport": "^1.0.0",
+        "jalno/translator": "dev-master"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
