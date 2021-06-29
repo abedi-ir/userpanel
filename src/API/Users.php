@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class Users extends API
 {
-    
+
     public function search(array $parameters = [], ?int $perPage = null, array $columns = ['*'], string $cursorName = 'cursor', ?Cursor $cursor = null): CursorPaginator
     {
         $this->requireAbility("userpanel_users_search");
@@ -32,8 +32,6 @@ class Users extends API
      */
     public function find($parameters): ?User
     {
-        $this->requireAnyAbility(["userpanel_users_search", "userpanel_users_edit", "userpanel_users_delete", "userpanel_users_view"]);
-
         $query = User::query();
 
         $types = $this->user()->childrenTypes();

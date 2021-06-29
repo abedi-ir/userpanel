@@ -18,19 +18,40 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     const DEACTIVE = 2;
     const SUSPEND = 3;
 
-    /**
-     * The User's default values for attributes.
-     * 
-     * @var array
-     */
-    public static array $withAttributes = [];
-
     public static function byUsername(string $username): ?User
     {
         $userName = User\UserName::where("username", $username)->first();
 
         return $userName ? User::find($userName->user_id) : null;
     }
+
+    public static function addEagerLoadRelation(string $name): void
+    {
+        self::$withRelations[] = $name;
+    }
+
+    /**
+     * @param string[] $with
+     */
+    public static function setEagerLoadRelations(array $with): void
+    {
+        self::$withRelations = $with;
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getEagerLoadRelations(): array
+    {
+        self::$withRelations;
+    }
+
+    /**
+     * The relations to eager load on every query.
+     *
+     * @property string[]
+     */
+    protected static array $withRelations = [];
 
     /**
      * The table associated with the model.
@@ -48,7 +69,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->with = array_merge($this->with, self::$withAttributes);
+        $this->with = array_merge($this->with, self::$withRelations);
     }
 
     /**
@@ -85,7 +106,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * The relations to eager load on every query.
      *
-     * @property array
+     * @property string[]
      */
     protected $with = ["usernames"];
 
