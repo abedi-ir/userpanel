@@ -1,4 +1,5 @@
 <?php
+
 use Jalno\Userpanel\Http\Controllers\{UsersController, LoginController, UserTypesController, ConfigController, LogsController};
 use Jalno\Userpanel\Models\UserType;
 
@@ -40,6 +41,9 @@ $router->group(['prefix' => '/userpanel', 'middleware' => 'auth'], function($rou
     $router->get("/logs", array('uses' => LogsController::class . "@search"));
     $router->get("/logs/{log}", array('uses' => LogsController::class . "@findByID"));
     $router->delete("/logs/{log}", array('uses' => LogsController::class . "@delete"));
+
+
+    $router->get("/online", array('uses' => UsersController::class . "@online"));
 });
 
 

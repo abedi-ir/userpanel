@@ -3,6 +3,7 @@ namespace Jalno\Userpanel\API;
 
 use Illuminate\Validation\Rule;
 use Jalno\Userpanel\Models\Log;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Validator;
 use Jalno\Userpanel\Models\{User, UserType};
 use Illuminate\Validation\ValidationException;
@@ -131,6 +132,12 @@ class Users extends API
             $log->parameters = $logParameters;
             $log->save();
         }
+    }
+
+    public function online()
+    {
+        $this->user()->lastonline_at = Date::now();
+        $this->user()->save();
     }
 
     /**

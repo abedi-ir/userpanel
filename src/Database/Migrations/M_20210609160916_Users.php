@@ -25,6 +25,8 @@ class M_20210609160916_Users extends Migration
             $table->string('password', 60);
             $table->string('remember_token', 100)->nullable();
             $table->boolean('has_custom_permissions');
+            $table->timestamp('lastonline_at')->useCurrent();
+            $table->timestamp('lastlogin_at')->nullable();
             $table->tinyInteger('status');
             $table->timestamps();
         });

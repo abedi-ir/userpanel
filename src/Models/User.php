@@ -189,10 +189,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public function isAdmin(): bool
     {
-		$parents = $this->parentTypes();
-		if (empty($parents)) {
-			return true;
-		}
-		return count($parents) == 1 and $parents[0] == $this->usertype_id;
-	}
+        $parents = $this->parentTypes();
+        if (empty($parents)) {
+            return true;
+        }
+        return count($parents) == 1 and $parents[0] == $this->usertype_id;
+    }
 }

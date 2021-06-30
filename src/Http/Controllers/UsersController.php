@@ -90,4 +90,13 @@ class UsersController extends Controller
 
         return response(["status" => true]);
     }
+
+    public function online(Request $request): Response
+    {
+        $this->api->forUser($request->user());
+
+        $this->api->online();
+
+        return response(["status" => true]);
+    }
 }
