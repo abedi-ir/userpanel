@@ -18,6 +18,9 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(IConfigValidatorContainer::class, ConfigValidatorContainer::class);
+		if ($this->app->runningInConsole()) {
+			$this->registerMigrations();
+		}
     }
 
     /**
@@ -30,4 +33,9 @@ class AppServiceProvider extends ServiceProvider
         $validators = new ConfigValidators($this->app);
         $validators->addValidators();
     }
+
+	public function registerMigrations()
+	{
+		$this->loadMigrationsFrom(package()->getMigrationPath());
+	}
 }
