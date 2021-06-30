@@ -36,6 +36,7 @@ class M_20210626180620_Logs extends Migration
      */
     public function down()
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('userpanel_logs');
     }
 }
