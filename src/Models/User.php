@@ -2,13 +2,28 @@
 
 namespace Jalno\Userpanel\Models;
 
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Laravel\Lumen\Auth\Authorizable;
 use Laravel\Passport\HasApiTokens;
+use Laravel\Lumen\Auth\Authorizable;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+
+/**
+ * @property int $id
+ * @property string $password
+ * @property int $usertype_id
+ * @property bool $has_custom_permissions
+ * @property int $status
+ * @property string $remember_token
+ * @property Collection|null $permissions
+ * @property Collection|null $usernames
+ * @property UserType $usertype
+ */
 
 class User extends Model implements AuthenticatableContract, AuthorizableContract
 {
@@ -18,7 +33,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     const DEACTIVE = 2;
     const SUSPEND = 3;
 
-    public static function byUsername(string $username): ?User
+    /**
+     * @return User|null
+     */
+    public static function byUsername(string $username)
     {
         $userName = User\UserName::where("username", $username)->first();
 
@@ -43,27 +61,27 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public static function getEagerLoadRelations(): array
     {
-        self::$withRelations;
+        return self::$withRelations;
     }
 
     /**
      * The relations to eager load on every query.
      *
-     * @property string[]
+     * @var string[]
      */
     protected static array $withRelations = [];
 
     /**
      * The table associated with the model.
      *
-     * @property string
+     * @var string
      */
     protected $table = 'userpanel_users';
 
     /**
      * Create a new Eloquent model instance.
      *
-     * @param  array  $attributes
+     * @param  array<string,mixed>  $attributes
      * @return void
      */
     public function __construct(array $attributes = [])
@@ -75,7 +93,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * The attributes that are mass assignable.
      *
-     * @property array
+     * @var string[]
      */
     protected $fillable = [
         'password',
@@ -87,7 +105,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * The attributes excluded from the model's JSON form.
      *
-     * @property array
+     * @var string[]
      */
     protected $hidden = [
         'password',
@@ -97,7 +115,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * The model's default values for attributes.
      *
-     * @property array
+     * @var array<string,mixed>
      */
     protected $attributes = [
         'has_custom_permissions' => false,
@@ -106,14 +124,14 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * The relations to eager load on every query.
      *
-     * @property string[]
+     * @var string[]
      */
     protected $with = ["usernames"];
 
     /**
      * Add a mutator to ensure hashed passwords
      */
-    public function setPasswordAttribute($password)
+    public function setPasswordAttribute(string $password): void
     {
         $this->attributes['password'] = password_hash($password, PASSWORD_DEFAULT);
     }
@@ -137,6 +155,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return $user;
     }
 
+    /**
+     * @param string[] $abilities
+     */
     public function canAny(array $abilities): bool
     {
         foreach ($abilities as $ability) {
@@ -148,39 +169,54 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return false;
     }
 
-    public function childrenTypes()
+    /**
+     * @return int[]
+     */
+    public function childrenTypes(): array
     {
         return $this->usertype->childrenTypes();
     }
 
-    public function parentTypes()
+    /**
+     * @return int[]
+     */
+    public function parentTypes(): array
     {
         return $this->usertype->parentTypes();
     }
 
-    public function usertype()
+    public function usertype(): HasOne
     {
         return $this->hasOne(UserType::class, "id", "usertype_id");
     }
 
+    /**
+     * @return HasMany<User\Permission>
+     */
     public function permissions()
     {
         return $this->hasMany(User\Permission::class, "user_id");
     }
 
+    /**
+     * @return hasMany<User\UserName>
+     */
     public function usernames()
     {
         return $this->hasMany(User\UserName::class, "user_id");
     }
 
-    public function canAbility(string $ability, ?array $arguments = [])
+    /**
+     * @param array<mixed> $arguments
+     */
+    public function canAbility(string $ability, ?array $arguments = []): bool
     {
         return $this->has_custom_permissions ?
                 $this->permissions->contains(fn($permission) => $permission->name == $ability) :
                 $this->usertype->can($ability, $arguments);
     }
 
-    public function abilities()
+    public function abilities(): ?Collection
     {
         return $this->has_custom_permissions ?
                 $this->permissions :

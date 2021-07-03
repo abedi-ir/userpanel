@@ -4,7 +4,18 @@ namespace Jalno\Userpanel\Models;
 
 use Jalno\Translator\Models\Translate;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+/**
+ * @property int $id
+ * @property Collection|null $names
+ * @property Collection|null $permissions
+ */
 
 class UserType extends Model
 {
@@ -32,21 +43,21 @@ class UserType extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var string[]
      */
     protected $fillable = [];
 
     /**
      * The attributes excluded from the model's JSON form.
      *
-     * @var array
+     * @var string[]
      */
     protected $hidden = [];
 
     /**
      * The relations to eager load on every query.
      *
-     * @property array
+     * @var string[]
      */
     protected $with = ['names'];
 
@@ -61,47 +72,53 @@ class UserType extends Model
         parent::__construct($attributes);
     }
 
-    public function priorities()
+    public function priorities(): BelongsToMany
     {
         return $this->belongsToMany(static::class, "userpanel_usertypes_priorities", "parent_id", "child_id");
     }
 
-    public function parents()
+    public function parents(): BelongsToMany
     {
         return $this->belongsToMany(static::class, "userpanel_usertypes_priorities", "child_id", "parent_id");
     }
 
-    public function permissions()
+    public function permissions(): HasMany
     {
         return $this->hasMany(UserType\Permission::class, "usertype_id");
     }
 
-    public function users()
+    public function users(): HasMany
     {
         return $this->hasMany(User::class, "usertype_id");
     }
 
-    public function names()
+    public function names(): MorphMany
     {
         return $this->morphMany(Translate::class, 'parentable', 'table', 'pk');
     }
 
-    public function name(string $lang)
+    public function name(string $lang): ?Translate
     {
         return $this->names->first(fn($name) => $name->lang == $lang);
     }
 
-    public function can(string $ability, ?array $arguments = [])
+    public function can(string $ability, ?array $arguments = []): bool
     {
         return $this->permissions->contains(fn($permission) => $permission->name == $ability);
     }
 
-    public function childrenTypes()
+    /**
+     * @return int[]
+     */
+    public function childrenTypes(): array
     {
         return $this->priorities->pluck('id')->all();
     }
 
-    public function parentTypes()
+    /**
+     * @return int[]
+     */
+    public function parentTypes(): array
     {
         return $this->parents->pluck('id')->all();
     }

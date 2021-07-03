@@ -7,45 +7,31 @@ use Illuminate\Database\Eloquent\{Model, Builder};
 use Illuminate\Contracts\Auth\{Authenticatable, Access\Authorizable};
 use Illuminate\Auth\{AuthenticationException, Access\AuthorizationException};
 
-
-/**
- * @phpstan-type Premitive string|int|float
- * @phpstan-type FilterOperationArray array {
- *  "eq"?: Premitive,
- *  "lt"?: Premitive,
- *  "gt"?: Premitive,
- *  "lte"?: Premitive,
- *  "gte"?: Premitive,
- *  "in"?: Premitive[],
- *  "nin"?: Premitive[],
- *  "and"?: FilterParameter,
- *  "or":?: FilterParameter
- * }
- * @phpstan-type FilterParameter array {
- *  string: FilterOperationArray|Premitive
- * }
- */
-
 abstract class API
 {
 
     protected ?Authenticatable $user = null;
     protected ?Password $passwordValidation = null;
 
-    public function forUser(?Authenticatable $user): void {
+    public function forUser(?Authenticatable $user): void
+    {
         $this->user = $user;
     }
 
-    public function user(): ?Authenticatable {
+    public function user(): ?Authenticatable
+    {
         return $this->user;
     }
 
+    /**
+     * @param array<string,mixed> $filters
+     */
     public function applyFiltersOnModel(Model $model, array $filters): void {
         $this->applyFiltersOnQuery($model->newQuery(), $filters);
     }
 
     /**
-     * @param FilterParameter $filters
+     * @param array<string,mixed> $filters
      */
     public function applyFiltersOnQuery(Builder $query, array $filters): void {
         foreach ($filters as $field => $operators) {
@@ -55,6 +41,7 @@ abstract class API
             if (!is_array($operators)) {
                 throw new Exception("operators is not array: " . var_export($operators, true));
             }
+            /** @var string $operator */
             foreach ($operators as $operator => $value) {
                 switch ($operator) {
                     case "eq": $operator = '='; break;
@@ -106,7 +93,8 @@ abstract class API
     /**
      * @param string[] $abilities
      */
-    public function requireAnyAbility(array $abilities, $allowGuest = false): void {
+    public function requireAnyAbility(array $abilities, bool $allowGuest = false): void
+    {
         if (!$this->user) {
             if ($allowGuest) {
                 return;
@@ -118,10 +106,8 @@ abstract class API
         }
     }
 
-    /**
-     * @param string[] $abilities
-     */
-    public function requireAbility(string $ability, $allowGuest = false): void {
+    public function requireAbility(string $ability, bool $allowGuest = false): void
+    {
         if (!$this->user) {
             if ($allowGuest) {
                 return;
@@ -133,12 +119,21 @@ abstract class API
         }
     }
 
-    protected function insurePremitiveValue($value): void {
+    /**
+     * @param mixed $value
+     */
+    protected function insurePremitiveValue($value): void
+    {
         if (!is_numeric($value) and !is_string($value)) {
             throw new Exception("value must be premitive");
         }
     }
-    protected function insureArrayOfPremitiveValue($value): void {
+
+    /**
+     * @param mixed $value
+     */
+    protected function insureArrayOfPremitiveValue($value): void
+    {
         if (!is_array($value)) {
             throw new Exception("value must be array of premitive");
         }
@@ -146,7 +141,12 @@ abstract class API
             $this->insurePremitiveValue($index);
         }
     }
-    protected function insureLogicalArray($value): void {
+
+    /**
+     * @param mixed $value
+     */
+    protected function insureLogicalArray($value): void
+    {
         if (!is_array($value)) {
             throw new Exception("value must be array");
         }

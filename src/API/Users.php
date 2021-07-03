@@ -1,45 +1,59 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use RunTimeException;
 use Illuminate\Validation\Rule;
 use Jalno\Userpanel\Models\Log;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Validator;
 use Jalno\Userpanel\Models\{User, UserType};
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Pagination\{Cursor, CursorPaginator};
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class Users extends API
 {
 
+    /**
+     * @param array<string,mixed> $parameters
+     * @param string[] $columns
+     */
     public function search(array $parameters = [], ?int $perPage = null, array $columns = ['*'], string $cursorName = 'cursor', ?Cursor $cursor = null): CursorPaginator
     {
         $this->requireAbility("userpanel_users_search");
         $query = User::query();
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        if (is_null($user) or !method_exists($user, "childrenTypes")) {
+            throw new RunTimeException("User is invalid");
+        }
+        $types = $user->childrenTypes();
         if ($types) {
             $query->whereIn("usertype_id", $types);
         } else {
-            $query->where("id", $this->user()->id);
+            $query->where("id", $user->id);
         }
         $this->applyFiltersOnQuery($query, $parameters);
         return $query->orderBy('id')->cursorPaginate($perPage, $columns, $cursorName, $cursor);
     }
 
     /**
-     * @param int|array $parameters
+     * @param int|array<string,mixed> $parameters
      */
     public function find($parameters): ?User
     {
         $query = User::query();
 
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        if (is_null($user) or !method_exists($user, "childrenTypes")) {
+            throw new RunTimeException("User is invalid");
+        }
+        $types = $user->childrenTypes();
         if ($types) {
             $query->whereIn("usertype_id", $types);
         } else {
-            $query->where("id", $this->user()->id);
+            $query->where("id", $user->id);
         }
 
         if (is_numeric($parameters)) {
@@ -51,13 +65,17 @@ class Users extends API
     }
 
     /**
-     * @param array $parameters
+     * @param array<string,mixed> $parameters
      */
     public function add(array $parameters): User
     {
         $this->requireAbility("userpanel_users_add");
 
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        if (is_null($user) or !method_exists($user, "childrenTypes")) {
+            throw new RunTimeException("User is invalid");
+        }
+        $types = $user->childrenTypes();
         if (!$types) {
             throw new AuthorizationException();
         }
@@ -69,30 +87,31 @@ class Users extends API
     }
 
     /**
-     * @param array $parameters
+     * @param array<string,mixed> $parameters
      */
-    public function edit(array $parameters): User
+    public function edit(int $id, array $parameters): User
     {
         $this->requireAbility("userpanel_users_edit");
 
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        if (is_null($user) or !method_exists($user, "childrenTypes")) {
+            throw new RunTimeException("User is invalid");
+        }
+        $types = $user->childrenTypes();
         if (empty($types)) {
             throw new AuthorizationException();
         }
 
-        $user = $this->find($parameters['user']);
+        $user = $this->find($id);
         if (!$user) {
-            $exception = new ModelNotFoundException();
-            $exception->setModel(User::class, $parameters["user"]);
-            throw $exception;
+            throw (new ModelNotFoundException)->setModel(User::class, $id);
         }
-        unset($parameters['user']);
 
         return $this->createOrUpdate($parameters, $user);
     }
 
     /**
-     * @param int[]|int $parameters
+     * @param int|array<string,mixed> $parameters
      */
     public function delete($parameters): void
     {
@@ -125,7 +144,7 @@ class Users extends API
 
         } while($paginator->hasMorePages());
 
-        if (!empty($logParameters["old"])) {
+        if (!empty($logParameters["old"]) and !is_null($this->user())) {
             $log = new Log();
             $log->user_id = $this->user()->id;
             $log->type = "jalno.userpanel.users.logs.delete";
@@ -134,10 +153,14 @@ class Users extends API
         }
     }
 
-    public function online()
+    public function online(): void
     {
-        $this->user()->lastonline_at = Date::now();
-        $this->user()->save();
+        $user = $this->user();
+        if (is_null($user)) {
+            throw new RunTimeException("User is invalid");
+        }
+        $user->lastonline_at = Date::now();
+        $user->save();
     }
 
     /**
@@ -145,6 +168,9 @@ class Users extends API
      */
     protected function createOrUpdate(array $parameters, ?User $user = null): User
     {
+        if (is_null($this->user()) or !method_exists($this->user(), "childrenTypes")) {
+            throw new RunTimeException("User is invalid");
+        }
         $required = ($user ? 'sometimes' : 'required');
         $uniqueUserNameRule = Rule::unique(User\UserName::class, "username");
         if ($user) {
@@ -232,9 +258,9 @@ class Users extends API
         }
 
         if ($hasCustomePermission and !$user->has_custom_permissions) {
-            $permisssions = $user->permissions;
+            $permissions = $user->permissions;
 
-            if ($permisssions) {
+            if ($permissions) {
                 $logParameters["old"]["permissions"] = [];
                 foreach ($permissions as $permission) {
                     $logParameters["old"]["permissions"][] = $permission->name;

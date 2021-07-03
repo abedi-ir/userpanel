@@ -5,6 +5,18 @@ namespace Jalno\Userpanel\Models;
 use Carbon\Carbon;
 use Jalno\Translator\Models\Translate;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string|null $ip
+ * @property string $type
+ * @property array<string,mixed> $parameters
+ * @property string $created_at
+ * @property string|null $updated_at
+ */
 
 class Log extends Model
 {
@@ -30,7 +42,7 @@ class Log extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var string[]
      */
     protected $fillable = [
         "user_id",
@@ -42,42 +54,42 @@ class Log extends Model
     /**
      * The attributes excluded from the model's JSON form.
      *
-     * @var array
+     * @var string[]
      */
     protected $hidden = [];
 
     /**
      * The relations to eager load on every query.
      *
-     * @property array
+     * @var string[]
      */
     protected $with = ["user"];
 
     /**
      * The attributes that should be cast.
      *
-     * @var array
+     * @var array<string,string>
      */
     protected $casts = [
         "parameters" => "array",
     ];
 
-    public function user()
+    public function user(): HasOne
     {
         return $this->hasOne(User::class, "id", "user_id");
     }
 
-    public function keywords()
+    public function keywords(): HasMany
     {
         return $this->hasMany(Log\Keyword::class, "log_id");
     }
 
-    public function keyword(string $name)
+    public function keyword(string $name): ?Log\Keyword
     {
         return $this->keywords->first(fn($keyword) => $keyword->name == $name);
     }
 
-    public function addTag(string $type)
+    public function addTag(string $type): int
     {
         return \DB::table("userpanel_logs_tags")->insertOrIgnore([
             "log_id" => $this->id,

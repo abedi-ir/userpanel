@@ -23,6 +23,7 @@ class Config extends API
     }
 
     /**
+     * @param array<string,mixed> $parameters
      * @return array<string,mixed>
      */
     public function search(array $parameters): array
@@ -41,7 +42,7 @@ class Config extends API
 
         $configs = [];
         foreach ($parameters["configs"] as $name) {
-            $configs[$name] = config($name);
+            $configs[(string) $name] = config($name);
         }
 
         return $configs;
@@ -94,10 +95,10 @@ class Config extends API
             $model->save();
         }
 
-        if (!empty($logParameters["old"]) and !empty($logParameters["new"])) {
+        if (!empty($logParameters["old"]) and !empty($logParameters["new"]) and !is_null($this->user())) {
             $log = new Log();
             $log->user_id = $this->user()->id;
-            $log->type = "jalno.userpanel.configs.logs." . ($config->has($name) ? "update" : "add");
+            $log->type = "jalno.userpanel.configs.logs.update";
             $log->parameters = $logParameters;
             $log->save();
         }

@@ -2,24 +2,29 @@
 namespace Jalno\Userpanel\API;
 
 use Illuminate\Validation\Rule;
+use Illuminate\Pagination\Cursor;
 use Jalno\Userpanel\Models\UserType;
 use Jalno\Userpanel\Models\{Log, User};
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserTypes extends API
 {   
     /**
-     * @param FilterParameters $filters
+     * @param array<string,mixed> $filters
+     * @param string[] $columns
      */
     public function search(array $filters = [], ?int $perPage = null, array $columns = ['*'], string $cursorName = 'cursor', ?Cursor $cursor = null): CursorPaginator
     {
         $this->requireAbility("userpanel_usertypes_search");
         $query = UserType::query();
-        $types = $this->user()->childrenTypes();
+
+        $user = $this->user();
+        $types = (!is_null($user) and method_exists($user, "childrenTypes")) ? $user->childrenTypes() : [];
+
         $query->whereIn("id", $types);
 
         $this->applyFiltersOnQuery($query, $filters);
@@ -27,15 +32,15 @@ class UserTypes extends API
     }
 
     /**
-     * @param int|FilterParameter $parameters
+     * @param int|array<string,mixed> $filters
      */
     public function find($filters): ?UserType
     {
         $this->requireAnyAbility(["userpanel_usertypes_search", "userpanel_usertypes_edit", "userpanel_usertypes_delete", "userpanel_usertypes_view"]);
 
         $query = UserType::query();
-
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        $types = (!is_null($user) and method_exists($user, "childrenTypes")) ? $user->childrenTypes() : [];
 
         if (!$types) {
             throw new AuthorizationException();
@@ -52,13 +57,14 @@ class UserTypes extends API
     }
 
     /**
-     * @param array{"names":string[],"permissions":string[],"priorities":int[]} $parameters
+     * @param array<string,mixed> $parameters
      */
     public function add(array $parameters): UserType
     {
         $this->requireAbility("userpanel_usertypes_add");
 
-        $types = $this->user()->childrenTypes();
+        $user = $this->user();
+        $types = (!is_null($user) and method_exists($user, "childrenTypes")) ? $user->childrenTypes() : [];
         if (!$types) {
             throw new AuthorizationException();
         }
@@ -67,23 +73,22 @@ class UserTypes extends API
     }
 
     /**
-     * @param array{"names"?:string[],"permissions"?:string[],"priorities"?:string[]} $parameters
+     * @param array<string,mixed> $parameters
      */
-    public function edit(array $parameters): UserType
+    public function edit(int $id, array $parameters): UserType
     {
         $this->requireAbility("userpanel_usertypes_edit");
 
-        $usertype = $this->find($parameters['usertype']);
+        $usertype = $this->find($id);
         if (!$usertype) {
             throw (new ModelNotFoundException)->setModel(UserType::class);
         }
-        unset($parameters['usertype']);
 
         return $this->createOrUpdate($parameters, $usertype);
     }
 
     /**
-     * @param FilterParameter|int $parameters
+     * @param int|array<string,mixed> $parameters
      */
     public function delete($parameters): void
     {
@@ -114,7 +119,7 @@ class UserTypes extends API
             }
         } while($paginator->hasMorePages());
 
-        if (!empty($logParameters["old"])) {
+        if (!empty($logParameters["old"]) and !is_null($this->user())) {
             $log = new Log();
             $log->user_id = $this->user()->id;
             $log->type = "jalno.userpanel.usertypes.logs.delete";
@@ -124,23 +129,24 @@ class UserTypes extends API
     }
 
     /**
-     * @param array{"names"?:string[],"permissions"?:string[],"priorities"?:string[]} $parameters
+     * @param array<string,mixed> $parameters
      */
     protected function createOrUpdate(array $parameters, ?UserType $usertype = null): UserType
     {
         $required = ($usertype ? 'sometimes' : 'required');
+        $user = $this->user();
         $parameters = Validator::validate($parameters, array(
             'names' => [$required, 'array', 'min:1'],
             'names.*' => ['string', 'min:3', 'max:255'],
             'permissions' => [$required, 'array', 'min:1'],
             'permissions.*' => ['string', 'max:255'],
             'priorities' => ['sometimes', 'array'],
-            'priorities.*' => ['numeric', Rule::in($this->user()->childrenTypes())],
+            'priorities.*' => ['numeric', Rule::in((!is_null($user) and method_exists($user, "childrenTypes")) ? $user->childrenTypes() : [])],
         ));
 
-        if (isset($parameters["permissions"])) {
+        if (isset($parameters["permissions"]) and !is_null($user)) {
             foreach ($parameters["permissions"] as $key => $permission) {
-                if (!$this->user()->can($permission)) {
+                if (!$user->can($permission)) {
                     throw ValidationException::withMessages(["permissions.{$key}" => "The selected permission {$key} is invalid."]);
                 }
             }
@@ -162,10 +168,10 @@ class UserTypes extends API
         if (!$usertype) {
             $usertype = UserType::create();
 
-            $parentTypes = $this->user()->parentTypes();
+            $parentTypes = (!is_null($user) and method_exists($user, "parentTypes")) ? $user->parentTypes() : [];
 
-            if (!in_array($this->user()->usertype_id, $parentTypes)) {
-                $parentTypes[] = $this->user()->usertype_id;
+            if ($user instanceof User and !in_array($user->usertype_id, $parentTypes)) {
+                $parentTypes[] = $user->usertype_id;
             }
 
             $logParameters["new"]["parentTypes"] = $parentTypes;
@@ -214,7 +220,7 @@ class UserTypes extends API
             if ($usertypeNames) {
                 $deletedNames = $usertypeNames->filter(fn($name) => !isset($parameters["names"][$name->lang]) or !in_array($name->text, $parameters["names"]));
                 
-                if ($deletedNames) {
+                if ($deletedNames->isNotEmpty()) {
                     $logParameters["old"]["names"] = [];
                     foreach ($deletedNames as $username) {
                         $logParameters["old"]["names"][$username->lang] = $username->text;
@@ -239,7 +245,7 @@ class UserTypes extends API
             if ($permissions) {
                 $deletedPermissions = $permissions->filter(fn($item) => !in_array($item->name, $parameters["permissions"]));
                 
-                if ($deletedPermissions) {
+                if ($deletedPermissions->isNotEmpty()) {
                     $logParameters["old"]["names"] = [];
 
                     foreach ($deletedPermissions as $permission) {
@@ -265,11 +271,13 @@ class UserTypes extends API
             }
         }
 
-        $log = new Log();
-        $log->user_id = $user->id;
-        $log->type = "jalno.userpanel.usertypes.logs." . (empty($logParameters["old"]) ? "add" : "update");
-        $log->parameters = $logParameters;
-        $log->save();
+        if (!is_null($user)) {
+            $log = new Log();
+            $log->user_id = $user->id;
+            $log->type = "jalno.userpanel.usertypes.logs." . (empty($logParameters["old"]) ? "add" : "update");
+            $log->parameters = $logParameters;
+            $log->save();
+        }
 
         return $usertype;
     }

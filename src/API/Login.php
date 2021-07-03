@@ -13,7 +13,7 @@ class Login extends API
 
     /**
      * Register new user
-     * @param array $parameters
+     * @param array<string,string> $parameters
      */
     public function register(array $parameters): User
     {

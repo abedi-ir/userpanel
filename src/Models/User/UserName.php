@@ -4,6 +4,14 @@ namespace Jalno\Userpanel\Models\User;
 
 use Jalno\Userpanel\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $username
+ * @property User|null $user
+ */
 
 class UserName extends Model
 {
@@ -17,7 +25,7 @@ class UserName extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var string[]
      */
     protected $fillable = [
         'user_id',
@@ -27,11 +35,11 @@ class UserName extends Model
     /**
      * The attributes excluded from the model's JSON form.
      *
-     * @var array
+     * @var string[]
      */
     protected $hidden = [];
 
-    public function user()
+    public function user(): HasOne
     {
         return $this->hasOne(User::class, "id", "user_id");
     }

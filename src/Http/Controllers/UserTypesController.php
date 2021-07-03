@@ -34,11 +34,17 @@ class UserTypesController extends Controller
         return response($response);
     }
 
+    /**
+     * @param int|string $id
+     */
     public function findByID(Request $request, $id): Response
     {
+        if (!is_numeric($id)) {
+            throw new NotFoundHttpException();
+        }
         $this->api->forUser($request->user());
 
-        $usertype = $this->api->find($id);
+        $usertype = $this->api->find((int) $id);
 
         if (!$usertype) {
             throw new NotFoundHttpException();
@@ -64,11 +70,17 @@ class UserTypesController extends Controller
         ));
     }
 
+    /**
+     * @param int|string $id
+     */
     public function edit(Request $request, $id): Response
     {
+        if (!is_numeric($id)) {
+            throw new NotFoundHttpException();
+        }
         $this->api->forUser($request->user());
 
-        $usertype = $this->api->edit(array_merge(["usertype" => $id], $request->all()));
+        $usertype = $this->api->edit((int) $id, $request->all());
 
         return response(array(
             "status" => true,
@@ -76,11 +88,17 @@ class UserTypesController extends Controller
         ));
     }
 
+    /**
+     * @param int|string $id
+     */
     public function delete(Request $request, $id): Response
     {
+        if (!is_numeric($id)) {
+            throw new NotFoundHttpException();
+        }
         $this->api->forUser($request->user());
 
-        $this->api->delete($id);
+        $this->api->delete((int) $id);
 
         return response(["status" => true]);
     }

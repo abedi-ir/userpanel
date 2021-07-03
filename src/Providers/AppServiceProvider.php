@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $validators->addValidators();
     }
 
-	public function registerMigrations()
+	public function registerMigrations(): void
 	{
 		$this->loadMigrationsFrom(package()->getMigrationPath());
 	}

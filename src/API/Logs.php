@@ -1,27 +1,29 @@
 <?php
 namespace Jalno\Userpanel\API;
 
-use Jalno\Userpanel\Models\Log;
-use Illuminate\Pagination\CursorPaginator;
+use Illuminate\Pagination\Cursor;
+use Jalno\Userpanel\Models\{User, Log};
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Contracts\Pagination\CursorPaginator as CursorPaginatorContract;
 
 class Logs extends API
 {   
     /**
-     * @param FilterParameters $filters
+     * @param array<string,mixed> $filters
+     * @param string[] $columns
      */
-    public function search(array $filters = [], ?int $perPage = null, array $columns = ['*'], string $cursorName = 'cursor', ?Cursor $cursor = null): CursorPaginator
+    public function search(array $filters = [], ?int $perPage = null, array $columns = ['*'], string $cursorName = 'cursor', ?Cursor $cursor = null): CursorPaginatorContract
     {
         $this->requireAbility("userpanel_logs_search");
 
         $user = $this->user();
         $query = Log::query();
         $query->with(["user" => function ($query) use(&$user) {
-            $types = $user->childrenTypes();
+            $types = (!is_null($user) and method_exists($user, "childrenTypes")) ? $user->childrenTypes() : [];
             if ($types) {
                 $query->whereIn('usertype_id', $types);
-            } else {
+            } elseif (!is_null($user)) {
                 $query->where("id", $user->id);
             }
         }]);
@@ -31,7 +33,7 @@ class Logs extends API
     }
 
     /**
-     * @param int|FilterParameter $parameters
+     * @param int|array<string,mixed> $filters
      */
     public function find($filters): ?Log
     {
@@ -39,11 +41,12 @@ class Logs extends API
 
         $user = $this->user();
         $query = Log::query();
+        
         $query->with(["user" => function ($query) use(&$user) {
-            $types = $user->childrenTypes();
+            $types = (!is_null($user) and method_exists($user, "childrenTypes")) ?  $user->childrenTypes() : [];
             if ($types) {
                 $query->whereIn('usertype_id', $types);
-            } else {
+            } elseif (!is_null($user)) {
                 $query->where("id", $user->id);
             }
         }]);
@@ -57,7 +60,7 @@ class Logs extends API
     }
 
     /**
-     * @param FilterParameter|int $parameters
+     * @param array<string,mixed>|int $parameters
      */
     public function delete($parameters): void
     {

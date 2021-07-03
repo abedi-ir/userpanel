@@ -8,7 +8,7 @@ class ConfigValidatorContainer implements Contracts\IConfigValidatorContainer
 {
 	protected Container $app;
     /**
-     * @property array<string,callable> $validations
+     * @var array<string,callable> $validations
      */
 	protected array $validations = [];
 
@@ -35,7 +35,7 @@ class ConfigValidatorContainer implements Contracts\IConfigValidatorContainer
     public function get(string $id)
     {
         if (!$this->has($id)) {
-            throw new NotFoundExceptionInterface();
+            throw new class("NotFound config with id: " . $id) extends \InvalidArgumentException implements NotFoundExceptionInterface {};
         }
 
         return $this->validations[$id];

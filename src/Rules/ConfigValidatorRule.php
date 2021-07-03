@@ -8,7 +8,8 @@ class ConfigValidatorRule implements Rule
 {
     protected Contracts\IConfigValidatorContainer $container;
     protected string $config;
-    /** @property callable */
+
+    /** @var callable|null */
     protected $callback;
 
 	public function __construct(Contracts\IConfigValidatorContainer $container, ?string $config = null)
@@ -20,7 +21,7 @@ class ConfigValidatorRule implements Rule
         }
     }
     
-    public function setCallBack(callable $callback)
+    public function setCallBack(callable $callback): void
     {
         $this->callback = $callback;
     }
@@ -53,7 +54,7 @@ class ConfigValidatorRule implements Rule
 
     protected function resolveCallBack(string $config): callable
     {
-        if ($this->callback) {
+        if (!is_null($this->callback)) {
             return $this->callback;
         }
 

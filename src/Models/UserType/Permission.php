@@ -4,6 +4,14 @@ namespace Jalno\Userpanel\Models\UserType;
 
 use Jalno\Userpanel\Models\UserType;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+/**
+ * @property int $id
+ * @property int $usertype_id
+ * @property string $name
+ * @property UserType|null $usertype
+ */
 
 class Permission extends Model
 {
@@ -17,7 +25,7 @@ class Permission extends Model
 	/**
 	 * The attributes that are mass assignable.
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	protected $fillable = [
 		"usertype_id",
@@ -27,11 +35,11 @@ class Permission extends Model
 	/**
 	 * The attributes excluded from the model's JSON form.
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	protected $hidden = [];
 
-	public function usertype()
+	public function usertype(): HasOne
 	{
 		return $this->hasOne(UserType::class, "id", "usertype_id");
 	}

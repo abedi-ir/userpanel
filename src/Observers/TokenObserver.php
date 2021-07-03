@@ -15,10 +15,10 @@ class TokenObserver
      */
     public function created(Token $token)
     {
-		$user = $this->getUser($token);
+        $user = $this->getUser($token);
 
-		$user->lastlogin_at = Date::now();
-		$user->save();
+        $user->lastlogin_at = Date::now();
+        $user->save();
     }
 
     /**
@@ -28,14 +28,14 @@ class TokenObserver
      */
     public function updated(Token $token)
     {
-		$user = $this->getUser($token);
+        $user = $this->getUser($token);
 
-		$user->lastlogin_at = Date::now();
-		$user->save();
+        $user->lastlogin_at = Date::now();
+        $user->save();
     }
-	
-	protected function getUser(Token $token): User
-	{
-		return $token->user()->getResults();
-	}
+    
+    protected function getUser(Token $token): User
+    {
+        return $token->user()->getResults();
+    }
 }

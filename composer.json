@@ -13,7 +13,9 @@
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
         "mockery/mockery": "^1.3.1",
-        "phpunit/phpunit": "^9.3"
+        "phpunit/phpunit": "^9.3",
+        "nunomaduro/larastan": "^0.7.6",
+        "orchestra/testbench": "^6.18.0"
     },
     "autoload": {
         "psr-4": {
@@ -35,6 +37,10 @@
     "scripts": {
         "convert-to-primary-package": [
             "@php ./vendor/bin/ConvertToPrimariyPackage"
+        ],
+        "test:types": "./vendor/phpstan/phpstan/phpstan analyse",
+        "test": [
+            "@test:types"
         ]
     }
 }

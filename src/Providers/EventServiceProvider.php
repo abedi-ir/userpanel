@@ -9,7 +9,7 @@ class EventServiceProvider extends ServiceProvider
     /**
      * The event listener mappings for the application.
      *
-     * @var array
+     * @var array<class-string,class-string>|array<string,string-class> $listen
      */
     protected $listen = [
         /* \Jalno\Userpanel\Events\ExampleEvent::class => [

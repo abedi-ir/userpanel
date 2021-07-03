@@ -4,7 +4,14 @@ namespace Jalno\Userpanel\Models\Log;
 
 use Jalno\Userpanel\Models\Log;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property int $log_id
+ * @property string $name
+ * @property string|int|array<string,mixed>|array<mixed> $value
+ */
 class Keyword extends Model
 {
 
@@ -18,7 +25,7 @@ class Keyword extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var string[]
      */
     protected $fillable = [
         "log_id",
@@ -29,18 +36,18 @@ class Keyword extends Model
     /**
      * The attributes excluded from the model's JSON form.
      *
-     * @var array
+     * @var string[]
      */
     protected $hidden = [];
 
     /**
      * The attributes that should be cast.
      *
-     * @var array
+     * @var array<string,string>
      */
     protected $casts = [];
 
-    public function user()
+    public function user(): HasOne
     {
         return $this->hasOne(Log::class, "id", "log_id");
     }
@@ -58,9 +65,9 @@ class Keyword extends Model
     }
 
     /**
-     * @param string|int|array<string,mixed>|array<mixed> $value
+     * @param string|int|array<string,mixed>|array<mixed>|object $value
      */
-    public function setValueAttribute($value)
+    public function setValueAttribute($value): void
     {
         $this->attributes['value'] = ((is_array($value) or is_object($value)) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value);
     }

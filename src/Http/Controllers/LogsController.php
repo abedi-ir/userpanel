@@ -22,6 +22,7 @@ class LogsController extends Controller
     {
         $this->api->forUser($request->user());
         $parameters = $request->all();
+        $limit = 25;
         if (isset($parameters['_limit'])) {
             $limit = intval($parameters['_limit']);
             unset($parameters['_limit']);
@@ -33,11 +34,17 @@ class LogsController extends Controller
         return response($response);
     }
 
+    /**
+     * @param int|string $log
+     */
     public function findByID(Request $request, $log): Response
     {
+        if (!is_numeric($log)) {
+            throw new NotFoundHttpException();
+        }
         $this->api->forUser($request->user());
 
-        $log = $this->api->find($log);
+        $log = $this->api->find((int) $log);
 
         if (!$log) {
             throw new NotFoundHttpException();
@@ -49,11 +56,17 @@ class LogsController extends Controller
         ));
     }
 
+    /**
+     * @param int|string $log
+     */
     public function delete(Request $request, $log): Response
     {
+        if (!is_numeric($log)) {
+            throw new NotFoundHttpException();
+        }
         $this->api->forUser($request->user());
 
-        $this->api->delete($log);
+        $this->api->delete((int) $log);
 
         return response(["status" => true]);
     }

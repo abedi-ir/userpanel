@@ -15,7 +15,7 @@ class ConfigValidators
         $this->app = $app;
     }
 
-    public function addValidators()
+    public function addValidators(): void
     {
         $validator = $this->app->make(IConfigValidatorContainer::class);
 
@@ -24,9 +24,9 @@ class ConfigValidators
         $validator->add("jalno.userpanel.register.usertype", function($value) {
             $user = Auth::user();
 
-            return $user and in_array($value, $user->childrenTypes());
+            return $user and method_exists($user, "childrenTypes") and in_array($value, $user->childrenTypes());
         });
 
-        $validator->add("jalno.userpanel.register.status", fn($value) => in_array(User::ACTIVE, User::DEACTIVE, User::SUSPEND));
+        $validator->add("jalno.userpanel.register.status", fn($value) => in_array($value, [User::ACTIVE, User::DEACTIVE, User::SUSPEND]));
     }
 }
