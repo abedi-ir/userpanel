@@ -3,16 +3,17 @@
 namespace Jalno\Userpanel\Models;
 
 use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Lumen\Auth\Authorizable;
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Container\Container;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+class User extends Model implements AuthenticatableContract, Authorizable
 {
-    use HasApiTokens, Authenticatable, Authorizable, HasFactory;
+    use HasApiTokens, Authenticatable, HasFactory;
 
     const ACTIVE = 1;
     const DEACTIVE = 2;
@@ -174,4 +175,43 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 		}
 		return count($parents) == 1 and $parents[0] == $this->usertype_id;
 	}
+
+    /**
+     * Determine if the entity has a given ability.
+     *
+     * @param string $ability
+     * @param mixed $arguments
+     * @return bool
+     */
+    public function can($ability, $arguments = [])
+    {
+        return Container::getInstance()
+            ->make(Gate::class)
+            ->forUser($this)
+            ->check($ability, $arguments);
+    }
+
+    /**
+     * Determine if the entity does not have a given ability.
+     *
+     * @param string $ability
+     * @param mixed $arguments
+     * @return bool
+     */
+    public function cant($ability, $arguments = [])
+    {
+        return !$this->can($ability, $arguments);
+    }
+
+    /**
+     * Determine if the entity does not have a given ability.
+     *
+     * @param string $ability
+     * @param mixed $arguments
+     * @return bool
+     */
+    public function cannot($ability, $arguments = []) 
+    {
+        return $this->cant($ability, $arguments);
+    }
 }

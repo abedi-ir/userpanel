@@ -3,12 +3,11 @@
 namespace Jalno\Userpanel\Http\Controllers;
 
 use Jalno\Userpanel\API\UserTypes;
-use Laravel\Lumen\Routing\Controller;
 use Illuminate\Http\{Request, Response};
 use Jalno\Userpanel\Models\{UserType, User};
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class UserTypesController extends Controller
+class UserTypesController
 {
 
     protected UserTypes $api;

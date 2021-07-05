@@ -3,11 +3,10 @@
 namespace Jalno\Userpanel\Http\Controllers;
 
 use Jalno\Userpanel\API\Config;
-use Laravel\Lumen\Routing\Controller;
 use Illuminate\Http\{Request, Response};
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class ConfigController extends Controller
+class ConfigController
 {
     protected Config $api;
 

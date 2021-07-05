@@ -3,11 +3,9 @@
 namespace Jalno\Userpanel\Http\Controllers;
 
 use Jalno\Userpanel\API\Login;
-use Laravel\Lumen\Routing\Controller;
 use Illuminate\Http\{Request, Response};
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class LoginController extends Controller
+class LoginController
 {
     protected Login $api;
 
