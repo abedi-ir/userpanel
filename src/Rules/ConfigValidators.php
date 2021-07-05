@@ -2,7 +2,7 @@
 namespace Jalno\Userpanel\Rules;
 
 use Jalno\Userpanel\Models\User;
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Auth;
 use Jalno\Userpanel\Contracts\IConfigValidatorContainer;
 
