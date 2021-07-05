@@ -1,27 +1,25 @@
 {
     "name": "jalno/userpanel",
-    "description": "Userpanel for jalno apps.",
+    "description": "Userpanel for laravel apps.",
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^7.3|^8.0",
-        "jalno/lumen": "^1.0.0",
-        "jalno/config": "^1.0.0"
-    },
-    "require-dev": {
-        "fakerphp/faker": "^1.9.1",
-        "mockery/mockery": "^1.3.1",
-        "phpunit/phpunit": "^9.3"
+        "php": "^7.4|^8.0",
+        "illuminate/database": "^8.0",
+        "illuminate/container": "^8.0",
+        "illuminate/contracts": "^8.0",
+        "illuminate/validation": "^8.0",
+        "illuminate/auth": "^8.0",
+        "illuminate/support": "^8.0",
+        "illuminate/pagination": "^8.0",
+        "illuminate/http": "^8.0",
+        "laravel/passport": ">=0.2.2",
+        "psr/container": "^1.0"
     },
     "autoload": {
         "psr-4": {
             "Jalno\\Userpanel\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "classmap": [
-            "tests/"
-        ]
     },
     "config": {
         "preferred-install": "dist",
@@ -30,9 +28,12 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "scripts": {
-        "convert-to-primary-package": [
-            "@php ./vendor/bin/ConvertToPrimariyPackage"
-        ]
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Jalno\\Userpanel\\Providers\\UserpanelServiceProvider",
+                "Jalno\\Userpanel\\Providers\\AuthorizationServiceProvider"
+            ]
+        }
     }
 }
