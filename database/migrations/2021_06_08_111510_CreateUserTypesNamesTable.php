@@ -1,11 +1,9 @@
 <?php
-namespace Jalno\Userpanel\Database\Migrations;
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class M_20210612161232_UseNames extends Migration
+class CreateUserTypesNamesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,15 +12,16 @@ class M_20210612161232_UseNames extends Migration
      */
     public function up()
     {
-        Schema::create('userpanel_users_usernames', function (Blueprint $table) {
+        Schema::create('userpanel_usertypes_names', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')
+            $table->unsignedBigInteger('usertype_id');
+            $table->foreign('usertype_id')
                     ->references('id')
-                    ->on('userpanel_users')
+                    ->on('userpanel_usertypes')
                     ->onDelete('cascade')
                     ->onUpdate('cascade');
-            $table->string('username', 255)->unique();
+            $table->string('lang', 2);
+            $table->string('name', 255);
             $table->timestamps();
         });
     }
@@ -34,6 +33,6 @@ class M_20210612161232_UseNames extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('userpanel_users_usernames');
+        Schema::dropIfExists('userpanel_usertypes_names');
     }
 }

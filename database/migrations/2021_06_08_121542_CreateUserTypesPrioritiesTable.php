@@ -1,11 +1,10 @@
 <?php
-namespace Jalno\Userpanel\Database\Migrations;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class M_20210608121542_UserTypesPriorities extends Migration
+class CreateUserTypesPrioritiesTable extends Migration
 {
     /**
      * Run the migrations.

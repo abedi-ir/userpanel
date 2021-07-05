@@ -1,11 +1,10 @@
 <?php
-namespace Jalno\Userpanel\Database\Migrations;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class M_20210608111510_UserTypesNames extends Migration
+class CreateUsersPermissionsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,16 +13,15 @@ class M_20210608111510_UserTypesNames extends Migration
      */
     public function up()
     {
-        Schema::create('userpanel_usertypes_names', function (Blueprint $table) {
+        Schema::create('userpanel_users_permissions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('usertype_id');
-            $table->foreign('usertype_id')
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')
                     ->references('id')
-                    ->on('userpanel_usertypes')
+                    ->on('userpanel_users')
                     ->onDelete('cascade')
                     ->onUpdate('cascade');
-            $table->string('lang', 2);
-            $table->string('name', 255);
+            $table->string("name");
             $table->timestamps();
         });
     }
@@ -35,6 +33,6 @@ class M_20210608111510_UserTypesNames extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('userpanel_usertypes_names');
+        Schema::dropIfExists('userpanel_users_permissions');
     }
 }

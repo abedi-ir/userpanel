@@ -1,19 +1,15 @@
 <?php
-use Jalno\Userpanel\Http\Controllers\{UsersController, LoginController, UserTypesController, ConfigController};
-use Jalno\Userpanel\Models\UserType;
 
-/** @var \Laravel\Lumen\Routing\Router $router */
+use Illuminate\Container\Container;
+use Jalno\Userpanel\Http\Controllers\{
+    UsersController,
+    LoginController,
+    UserTypesController,
+    ConfigController
+};
 
-/*
-|--------------------------------------------------------------------------
-| Application Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register all of the routes for an application.
-| It is a breeze. Simply tell Lumen the URIs it should respond to
-| and give it the Closure to call when that URI is requested.
-|
-*/
+/** @var \Laravel\Lumen\Routing\Router|\Illuminate\Contracts\Routing\Registrar */
+$router = Container::getInstance()->make("router");
 
 $router->post("/register", array('uses' => LoginController::class . "@register"));
 
@@ -36,9 +32,4 @@ $router->group(['prefix' => '/userpanel', 'middleware' => 'auth'], function($rou
     $router->get("/config/{config}", array('uses' => ConfigController::class . "@byConfig"));
     $router->put("/config", array('uses' => ConfigController::class . "@update"));
     $router->put("/config/{config}", array('uses' => ConfigController::class . "@updateByConfig"));
-});
-
-
-$router->get('/', function () use ($router) {
-    return $router->app->version();
 });
