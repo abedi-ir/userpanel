@@ -1,6 +1,7 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use Jalno\API\API;
 use Illuminate\Validation\Rule;
 use Illuminate\Pagination\Cursor;
 use Jalno\Userpanel\Models\UserType;

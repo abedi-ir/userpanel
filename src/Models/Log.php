@@ -7,6 +7,7 @@ use Jalno\Translator\Models\Translate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Jalno\API\{Contracts\ISearchableModel, Concerns\HasSearchAttributeTrait};
 
 /**
  * @property int $id
@@ -18,8 +19,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $updated_at
  */
 
-class Log extends Model
+class Log extends Model implements ISearchableModel
 {
+    use HasSearchAttributeTrait;
+
     /**
      * The "booted" method of the model.
      *
@@ -73,6 +76,18 @@ class Log extends Model
     protected $casts = [
         "parameters" => "array",
     ];
+
+	/**
+	 * @var string[]
+	 */
+	protected array $searchAttributes = [
+		"id",
+		"user",
+		"user_id",
+		"ip",
+		"type",
+		"keywords",
+	];
 
     public function user(): HasOne
     {

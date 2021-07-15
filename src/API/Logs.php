@@ -1,6 +1,7 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use Jalno\API\API;
 use Illuminate\Pagination\Cursor;
 use Jalno\Userpanel\Models\{User, Log};
 use Illuminate\Auth\Access\AuthorizationException;

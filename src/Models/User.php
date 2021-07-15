@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Jalno\API\{Contracts\ISearchableModel, Concerns\HasSearchAttributeTrait};
 
 /**
  * @property int $id
@@ -25,9 +26,9 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
  * @property UserType $usertype
  */
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+class User extends Model implements AuthenticatableContract, AuthorizableContract, ISearchableModel
 {
-    use HasApiTokens, Authenticatable, Authorizable, HasFactory;
+    use HasApiTokens, Authenticatable, Authorizable, HasFactory, HasSearchAttributeTrait;
 
     const ACTIVE = 1;
     const DEACTIVE = 2;
@@ -78,17 +79,17 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     protected $table = 'userpanel_users';
 
-    /**
-     * Create a new Eloquent model instance.
-     *
-     * @param  array<string,mixed>  $attributes
-     * @return void
-     */
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->with = array_merge($this->with, self::$withRelations);
-    }
+	/**
+	 * @var string[]
+	 */
+	protected array $searchAttributes = [
+        "id",
+        "usertype_id",
+        "has_custom_permissions",
+        "usernames",
+        "usertype",
+        "permissions",
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -127,6 +128,18 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var string[]
      */
     protected $with = ["usernames"];
+
+    /**
+     * Create a new Eloquent model instance.
+     *
+     * @param  array<string,mixed>  $attributes
+     * @return void
+     */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->with = array_merge($this->with, self::$withRelations);
+    }
 
     /**
      * Add a mutator to ensure hashed passwords

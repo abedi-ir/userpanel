@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Jalno\API\{Contracts\ISearchableModel, Concerns\HasSearchAttributeTrait};
 
 /**
  * @property int $id
@@ -17,8 +18,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property Collection|null $permissions
  */
 
-class UserType extends Model
+class UserType extends Model implements ISearchableModel
 {
+    use HasSearchAttributeTrait;
+
     /**
      * The "booted" method of the model.
      *

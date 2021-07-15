@@ -5,6 +5,7 @@ namespace Jalno\Userpanel\Models\User;
 use Jalno\Userpanel\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Jalno\API\{Contracts\ISearchableModel, Concerns\HasSearchAttributeTrait};
 
 /**
  * @property int $id
@@ -13,8 +14,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property User|null $user
  */
 
-class UserName extends Model
+class UserName extends Model implements ISearchableModel
 {
+    use HasSearchAttributeTrait;
+
     /**
      * The table associated with the model.
      *
@@ -38,6 +41,16 @@ class UserName extends Model
      * @var string[]
      */
     protected $hidden = [];
+
+	/**
+	 * @var string[]
+	 */
+	protected array $searchAttributes = [
+		"id",
+		"user",
+		"user_id",
+		"username",
+	];
 
     public function user(): HasOne
     {

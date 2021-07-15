@@ -1,6 +1,7 @@
 <?php
 namespace Jalno\Userpanel\API;
 
+use Jalno\API\API;
 use Jalno\Userpanel\Models\Log;
 use Illuminate\Validation\Rule;
 use Jalno\Userpanel\Models\User;
